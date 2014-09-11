@@ -7,9 +7,9 @@ TextFileXpander
 Introduction
 --------------------
 TextFileXpander is a simple Taskbar application for Windows.  
-Easy to paste your fixed phrase to the Clipboard and user input field of current application if possible.
-Launch your default application for ".txt" when you click a file name.
-Magic words provides for cooperation with an external application.
+Easy to paste your fixed phrase to the Clipboard and user input field of current application if possible.  
+Launch your default application for ".txt" when you click a file name.  
+Magic words provides for cooperation with an external application.  
 
 Requirements
 --------------------
@@ -20,7 +20,7 @@ Preparation
 --------------------
 1. Create a new folder and name it e.g. TextFileXpander.
 2. Create UTF-8 text files in your folder, like [this](https://github.com/wanswings/TextFileXpanderData/).
-3. Copy your folder to cloud storage if you want to share other platforms. We recommend Dropbox.
+3. Copy your folder to cloud storage if you want to share other platforms. We recommend Dropbox syncing to keep your data in sync with TextFileXpander.
 
 `TextFileXpander uses .txt extension only.`
 
@@ -51,6 +51,8 @@ How-To Use
 
 ![](https://raw.github.com/wanswings/TextFileXpanderWin/master/screenshots/screenshot5.png)
 
+`TextFileXpander is not automatic sync. Use "Refresh" of the menu item.`
+
 #### email.txt
 
     -------------------- paste
@@ -61,6 +63,14 @@ How-To Use
     email: jjj@kkk.lll
     email: mmm@nnn.ooo,ppp@qqq.rrr
     email: sss@ttt.uuu,vvv@www.xxx,yyy@zzz
+
+Uninstall
+--------------------
+1. Stop "Launch at startup" from TextFileXpander menu before removing.
+2. To delete TextFileXpander.exe from your Applications folder.
+3. To delete a registry key from the Registry if you need.
+
+`HKEY_CURRENT_USER\Software\wanswings\TextFileXpander`
 
 Release Notes 
 --------------------
