@@ -226,17 +226,40 @@ namespace TextFileXpander
 
 				string sendStr = null;
 
-				if (matchCmd.Equals("email")) {
-					// email
+				if (matchCmd.Equals("mailto")) {
+					// mailto
 					sendStr = "mailto:" + matchStr;
 				}
 				else if (matchCmd.Equals("map")) {
 					// map
 					sendStr = "http://maps.google.co.jp/maps?q=" + Uri.EscapeUriString(matchStr);
 				}
+				else if (matchCmd.Equals("route")) {
+					// route
+					Regex regexp2 = new Regex("^\\s*from:\\s*(.+)\\s+to:\\s*(.+)", RegexOptions.IgnoreCase);
+					Match match2 = regexp2.Match(matchStr);
+					if (match2.Success) {
+						string matchfrom = match2.Groups[1].Value;
+						Debug.WriteLine("matchfrom: " + matchfrom);
+						string matchto = match2.Groups[2].Value;
+						Debug.WriteLine("matchto: " + matchto);
+
+						sendStr = "http://maps.google.co.jp/maps?saddr=" + Uri.EscapeUriString(matchfrom)
+															+ "&daddr=" + Uri.EscapeUriString(matchto);
+					}
+				}
+				else if (matchCmd.Equals("url")) {
+					// url
+					sendStr = matchStr;
+				}
 				if (sendStr != null) {
 					Debug.WriteLine(matchCmd + ": " + sendStr);
-					Process p = Process.Start(sendStr);
+					try {
+						Process p = Process.Start(sendStr);
+					}
+					catch (System.Exception ex) {
+						System.Console.WriteLine(ex.Message);
+					}
 					return;
 				}
 			}
