@@ -226,13 +226,21 @@ namespace TextFileXpander
 
 				string sendStr = null;
 
-				if (matchCmd.Equals("mailto")) {
+				if (matchCmd.Equals("dict")) {
+					// dict
+					str = matchStr;
+				}
+				else if (matchCmd.Equals("mailto")) {
 					// mailto
 					sendStr = "mailto:" + matchStr;
 				}
 				else if (matchCmd.Equals("map")) {
 					// map
-					sendStr = "http://maps.google.co.jp/maps?q=" + Uri.EscapeUriString(matchStr);
+					sendStr = "http://maps.google.com/maps?q=" + Uri.EscapeUriString(matchStr);
+				}
+				else if (matchCmd.Equals("people")) {
+					// people
+					str = matchStr;
 				}
 				else if (matchCmd.Equals("route")) {
 					// route
@@ -244,14 +252,23 @@ namespace TextFileXpander
 						string matchto = match2.Groups[2].Value;
 						Debug.WriteLine("matchto: " + matchto);
 
-						sendStr = "http://maps.google.co.jp/maps?saddr=" + Uri.EscapeUriString(matchfrom)
+						sendStr = "http://maps.google.com/maps?saddr=" + Uri.EscapeUriString(matchfrom)
 															+ "&daddr=" + Uri.EscapeUriString(matchto);
 					}
+				}
+				else if (matchCmd.Equals("twitter")) {
+					// twitter
+					str = matchStr;
 				}
 				else if (matchCmd.Equals("url")) {
 					// url
 					sendStr = matchStr;
 				}
+				else if (matchCmd.Equals("youtube")) {
+					// youtube
+					sendStr = "http://www.youtube.com/results?search_query=" + Uri.EscapeUriString(matchStr);
+				}
+
 				if (sendStr != null) {
 					Debug.WriteLine(matchCmd + ": " + sendStr);
 					try {

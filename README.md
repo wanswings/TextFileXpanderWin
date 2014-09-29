@@ -10,6 +10,7 @@ TextFileXpander is a simple Taskbar application for Windows.
 Easy to paste your fixed phrase to the Clipboard and user input field of current application if possible.  
 Launch your default application for ".txt" when you click a file name.  
 Magic words provides for cooperation with an external application.  
+Share with your Mac, Windows, iOS and Android devices.  
 
 Requirements
 --------------------
@@ -74,6 +75,10 @@ Uninstall
 
 Release Notes 
 --------------------
+Version 1.2
+
+- Add some magic words.
+
 Version 1.1
 
 - Change the magic word "email" to "mailto".
