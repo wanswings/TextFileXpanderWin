@@ -230,6 +230,10 @@ namespace TextFileXpander
 					// dict
 					str = matchStr;
 				}
+				else if (matchCmd.Equals("flight")) {
+					// flight
+					sendStr = "http://www.google.com/search?q=flight%20" + Uri.EscapeUriString(matchStr);
+				}
 				else if (matchCmd.Equals("mailto")) {
 					// mailto
 					sendStr = "mailto:" + matchStr;
@@ -256,6 +260,10 @@ namespace TextFileXpander
 															+ "&daddr=" + Uri.EscapeUriString(matchto);
 					}
 				}
+				else if (matchCmd.Equals("tel")) {
+					// tel
+					str = matchStr;
+				}
 				else if (matchCmd.Equals("twitter")) {
 					// twitter
 					str = matchStr;
@@ -263,6 +271,10 @@ namespace TextFileXpander
 				else if (matchCmd.Equals("url")) {
 					// url
 					sendStr = matchStr;
+				}
+				else if (matchCmd.Equals("weather")) {
+					// weather
+					sendStr = "http://www.weather.com/search/enhancedlocalsearch?where=" + Uri.EscapeUriString(matchStr);
 				}
 				else if (matchCmd.Equals("youtube")) {
 					// youtube

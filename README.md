@@ -75,6 +75,10 @@ Uninstall
 
 Release Notes 
 --------------------
+Version 1.3
+
+- Add some magic words.
+
 Version 1.2
 
 - Add some magic words.
