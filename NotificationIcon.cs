@@ -242,9 +242,17 @@ namespace TextFileXpander
 					// map
 					sendStr = "http://maps.google.com/maps?q=" + Uri.EscapeUriString(matchStr);
 				}
+				else if (matchCmd.Equals("near")) {
+					// near
+					sendStr = "http://foursquare.com/explore?near=" + Uri.EscapeUriString(matchStr);
+				}
 				else if (matchCmd.Equals("people")) {
 					// people
 					str = matchStr;
+				}
+				else if (matchCmd.Equals("recipe")) {
+					// recipe
+					sendStr = "http://www.epicurious.com/tools/searchresults?search=" + Uri.EscapeUriString(matchStr);
 				}
 				else if (matchCmd.Equals("route")) {
 					// route
