@@ -66,6 +66,9 @@ namespace TextFileXpander
 		private void InitializeMenu()
 		{
 			fpMenu.Items.Clear();
+			Regex regexp1 = new Regex("^(-{2}-+)\\s*(.*)", RegexOptions.IgnoreCase);
+			Regex regexp2 = new Regex("^marker:(strong:|weak:)?\\s*(.+)", RegexOptions.IgnoreCase);
+
 			int idxMain = 0;
 			RegistryKey regkey = Registry.CurrentUser.OpenSubKey(regKeyProc, false);
 			if (regkey != null) {
@@ -77,7 +80,6 @@ namespace TextFileXpander
 					try {
 						string[] dirs = Directory.GetFiles(dirPath, "*.txt", SearchOption.TopDirectoryOnly);
 						Array.Sort(dirs);
-						Regex regexp = new Regex("^(-{2}-+)\\s*(.*)", RegexOptions.IgnoreCase);
 
 						foreach (string fullPath in dirs) {
 							Debug.WriteLine("File: " + fullPath);
@@ -88,12 +90,30 @@ namespace TextFileXpander
 							while (reader.Peek() >= 0) {
 								string line = reader.ReadLine();
 								if (line.Length > 0) {
-									Match match = regexp.Match(line);
-									if (match.Success) {
+									Match match1 = regexp1.Match(line);
+									if (match1.Success) {
 										ToolStripSeparator submenuSeparator = new ToolStripSeparator();
 										submenu.DropDownItems.Add(submenuSeparator);
 									}
 									else {
+										Color fg;
+										Match match2 = regexp2.Match(line);
+										if (match2.Success) {
+											string matchCmd = match2.Groups[1].Value;
+											line = match2.Groups[2].Value;
+											if (matchCmd.Equals("strong:")) {
+												fg = Color.Red;
+											}
+											else if (matchCmd.Equals("weak:")) {
+												fg = Color.LightGray;
+											}
+											else {
+												fg = Color.Blue;
+											}
+										}
+										else {
+											fg = Color.Black;
+										}
 										string itemName;
 										if (line.Length > 64) {
 											itemName = line.Substring(0, 64) + "...";
@@ -102,6 +122,7 @@ namespace TextFileXpander
 											itemName = line;
 										}
 										ToolStripMenuItem item = new ToolStripMenuItem(itemName, null, new EventHandler(PushData));
+										item.ForeColor = fg;
 										item.Tag = line;
 										submenu.DropDownItems.Add(item);
 									}
