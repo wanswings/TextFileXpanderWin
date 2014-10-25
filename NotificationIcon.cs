@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -38,6 +39,7 @@ namespace TextFileXpander
 		// HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run
 		private static string regKeyStartup = @"Software\Microsoft\Windows\CurrentVersion\Run";
 
+		private string appName;
 		private NotifyIcon notifyIcon;
 		private ContextMenuStrip fpMenu;
 		private Bitmap imgLaunchAtStartup;
@@ -46,7 +48,7 @@ namespace TextFileXpander
 		#region Initialize
 		public NotificationIcon()
 		{
-			string appName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
+			appName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
 			notifyIcon = new NotifyIcon();
 			notifyIcon.Text = appName;
 			fpMenu = new ContextMenuStrip();
@@ -67,7 +69,7 @@ namespace TextFileXpander
 		{
 			fpMenu.Items.Clear();
 			Regex regexp1 = new Regex("^(-{2}-+)\\s*(.*)", RegexOptions.IgnoreCase);
-			Regex regexp2 = new Regex("^marker:(strong:|weak:)?\\s*(.+)", RegexOptions.IgnoreCase);
+			Regex regexp2 = new Regex("^([a-z]+):(.+)", RegexOptions.IgnoreCase);
 
 			int idxMain = 0;
 			RegistryKey regkey = Registry.CurrentUser.OpenSubKey(regKeyProc, false);
@@ -96,24 +98,23 @@ namespace TextFileXpander
 										submenu.DropDownItems.Add(submenuSeparator);
 									}
 									else {
-										Color fg;
+										Color fg = Color.Black;
+
 										Match match2 = regexp2.Match(line);
 										if (match2.Success) {
 											string matchCmd = match2.Groups[1].Value;
-											line = match2.Groups[2].Value;
-											if (matchCmd.Equals("strong:")) {
-												fg = Color.Red;
+											string matchStr = match2.Groups[2].Value;
+
+											if (matchCmd.Equals("currency")) {
+												// currency
+												getCurrencyStart(matchStr, idxMain, idxSub);
 											}
-											else if (matchCmd.Equals("weak:")) {
-												fg = Color.LightGray;
-											}
-											else {
-												fg = Color.Blue;
+											else if (matchCmd.Equals("marker")) {
+												// marker
+												fg = getMarkerColor(matchStr, ref line);
 											}
 										}
-										else {
-											fg = Color.Black;
-										}
+
 										string itemName;
 										if (line.Length > 64) {
 											itemName = line.Substring(0, 64) + "...";
@@ -166,7 +167,82 @@ namespace TextFileXpander
 			}
 			fpMenu.Items.Add(new ToolStripMenuItem("Launch at startup", img, new EventHandler(ToggleLaunchAtStartup)));
 			idxLaunchAtStartup = idxMain++;
+			fpMenu.Items.Add(new ToolStripMenuItem("About " + appName, null, new EventHandler(About)));
+			idxMain++;
 			fpMenu.Items.Add(new ToolStripMenuItem("Quit", null, new EventHandler(Terminate)));
+		}
+
+		private Color getMarkerColor(string param, ref string line)
+		{
+			Color fg = Color.Black;
+
+			Regex regexp = new Regex("^\\s*(strong:|weak:)?\\s*(.+)", RegexOptions.IgnoreCase);
+			Match match = regexp.Match(param);
+			if (match.Success) {
+				string matchCmd = match.Groups[1].Value;
+				line = match.Groups[2].Value;
+				if (matchCmd.Equals("strong:")) {
+					fg = Color.Red;
+				}
+				else if (matchCmd.Equals("weak:")) {
+					fg = Color.LightGray;
+				}
+				else {
+					fg = Color.Blue;
+				}
+			}
+			return fg;
+		}
+
+		private void getCurrencyStart(string param, int idxMain, int idxSub)
+		{
+			if (!System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable()) {
+				return;
+			}
+
+			Regex regexp = new Regex("^\\s*from:\\s*(.+)\\s+to:\\s*(.+)", RegexOptions.IgnoreCase);
+			Match match = regexp.Match(param);
+			if (!match.Success) {
+				return;
+			}
+
+			string matchfrom = match.Groups[1].Value;
+			string matchto = match.Groups[2].Value;
+
+			String wk = "http://www.google.com/finance/converter?a=1&from=";
+			wk += Uri.EscapeUriString(matchfrom);
+			wk += "&to=" + Uri.EscapeUriString(matchto);
+
+			HttpWebRequest req = (HttpWebRequest)WebRequest.Create(wk);
+			req.BeginGetResponse(result =>
+			{
+				HttpGetTask(result, req, idxMain, idxSub);
+			},
+			null);
+		}
+
+		private void HttpGetTask(IAsyncResult result, HttpWebRequest req, int idxMain, int idxSub)
+		{
+			using (HttpWebResponse res = (HttpWebResponse) req.EndGetResponse(result))
+			{
+				Stream st = res.GetResponseStream();
+				StreamReader sr = new StreamReader(st);
+				string getdata = sr.ReadToEnd();
+				sr.Close();
+				st.Close();
+				res.Close();
+
+				Regex regexp = new Regex("<span class=bld>([0-9\\.]+).+</span>", RegexOptions.IgnoreCase);
+				Match match = regexp.Match(getdata);
+				if (match.Success) {
+					string matchValue = match.Groups[1].Value;
+
+					ToolStripMenuItem submenu = (ToolStripMenuItem)fpMenu.Items[idxMain];
+					ToolStripMenuItem item = (ToolStripMenuItem)submenu.DropDownItems[idxSub];
+					item.ToolTipText = matchValue;
+					Debug.WriteLine("HttpGetTask: " + matchValue);
+				}
+			}
 		}
 		#endregion
 
@@ -247,13 +323,26 @@ namespace TextFileXpander
 
 				string sendStr = null;
 
-				if (matchCmd.Equals("dict")) {
+				if (matchCmd.Equals("currency")) {
+					// currency
+					Regex regexp2 = new Regex("^\\s*from:\\s*(.+)\\s+to:\\s*(\\S+)", RegexOptions.IgnoreCase);
+					Match match2 = regexp2.Match(matchStr);
+					if (match2.Success) {
+						string matchfrom = match2.Groups[1].Value;
+						string matchto = match2.Groups[2].Value;
+
+						sendStr = "http://www.google.com/finance/?q=";
+						sendStr += Uri.EscapeUriString(matchfrom);
+						sendStr += Uri.EscapeUriString(matchto);
+					}
+				}
+				else if (matchCmd.Equals("dict")) {
 					// dict
 					str = matchStr;
 				}
 				else if (matchCmd.Equals("flight")) {
 					// flight
-					sendStr = "http://www.google.com/search?q=flight%20" + Uri.EscapeUriString(matchStr);
+					sendStr = "http://flightaware.com/live/flight/" + Uri.EscapeUriString(matchStr);
 				}
 				else if (matchCmd.Equals("mailto")) {
 					// mailto
@@ -281,12 +370,13 @@ namespace TextFileXpander
 					Match match2 = regexp2.Match(matchStr);
 					if (match2.Success) {
 						string matchfrom = match2.Groups[1].Value;
-						Debug.WriteLine("matchfrom: " + matchfrom);
 						string matchto = match2.Groups[2].Value;
-						Debug.WriteLine("matchto: " + matchto);
 
-						sendStr = "http://maps.google.com/maps?saddr=" + Uri.EscapeUriString(matchfrom)
-															+ "&daddr=" + Uri.EscapeUriString(matchto);
+						sendStr = "http://maps.google.com/maps?saddr=";
+						if (!matchfrom.Equals("here")) {
+							sendStr += Uri.EscapeUriString(matchfrom);
+						}
+						sendStr += "&daddr=" + Uri.EscapeUriString(matchto);
 					}
 				}
 				else if (matchCmd.Equals("tel")) {
@@ -303,7 +393,7 @@ namespace TextFileXpander
 				}
 				else if (matchCmd.Equals("weather")) {
 					// weather
-					sendStr = "http://www.weather.com/search/enhancedlocalsearch?where=" + Uri.EscapeUriString(matchStr);
+					sendStr = "http://www.google.com/search?q=weather%20" + Uri.EscapeUriString(matchStr);
 				}
 				else if (matchCmd.Equals("youtube")) {
 					// youtube
@@ -373,6 +463,13 @@ namespace TextFileXpander
 				img = imgLaunchAtStartup;
 			}
 			fpMenu.Items[idxLaunchAtStartup].Image = img;
+		}
+
+		private void About(object sender, EventArgs e)
+		{
+			Version ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+			string version = string.Format("{0}.{1}", ver.Major, ver.Minor);
+			DialogResult result = MessageBox.Show("Version " + version, "About " + appName, MessageBoxButtons.OK, MessageBoxIcon.Information);
 		}
 
 		private void RefreshData(object sender, EventArgs e)
